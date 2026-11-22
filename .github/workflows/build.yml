@@ -1,0 +1,89 @@
+name: Build Mali Vulkan Driver (Android aarch64)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android-arm64:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libclang-dev \
+            llvm-dev \
+            pkg-config \
+            python3-pip \
+            python3-mako \
+            python3-yaml \
+            unzip \
+            wget
+
+      - name: Install Meson >= 1.7 and Ninja
+        run: |
+          python3 -m pip install --break-system-packages "meson>=1.7.0" ninja mako PyYAML
+
+      - name: Setup Rust and aarch64-linux-android target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Cache Cargo & bindgen-cli 0.71.1
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/bindgen
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-bindgen-0.71.1
+
+      - name: Install bindgen-cli 0.71.1 (Mesa compatible)
+        run: |
+          if ! command -v bindgen >/dev/null 2>&1; then
+            cargo install --locked bindgen-cli --version 0.71.1
+          fi
+          bindgen --version
+
+      - name: Install Android NDK r28c (28.2.13676358)
+        run: |
+          NDK_VER="28.2.13676358"
+          SDK_ROOT="/usr/local/lib/android/sdk"
+          if [ ! -d "$SDK_ROOT/ndk/$NDK_VER" ]; then
+            yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" "ndk;$NDK_VER"
+          fi
+          echo "ANDROID_NDK_HOME=$SDK_ROOT/ndk/$NDK_VER" >> $GITHUB_ENV
+
+      - name: Configure and compile with Meson & Ninja
+        run: |
+          cat <<EOF > /tmp/ndk-override.ini
+          [constants]
+          ndk = '${ANDROID_NDK_HOME}'
+          EOF
+
+          meson setup build-android \
+            --cross-file /tmp/ndk-override.ini \
+            --cross-file cross/android-aarch64.ini \
+            --buildtype=release \
+            -Dstrip=true
+
+          ninja -C build-android
+
+      - name: Locate built driver library
+        run: |
+          mkdir -p artifacts
+          find build-android -name "libvulkan_mali.so" -exec cp -v {} artifacts/ \;
+          ls -lh artifacts/
+
+      - name: Upload libvulkan_mali.so artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libvulkan_mali-android-aarch64
+          path: artifacts/libvulkan_mali.so
+          if-no-files-found: error
