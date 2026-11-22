@@ -495,12 +495,18 @@ mali_gfx_fill_sysvals(struct mali_cmd_buffer *cmd, struct mali_graphics_sysvals 
    /* Viewport transform (the vertex shader applies it): scale (w/2, h/2,
     * zmax - zmin), offset (x + w/2, y + h/2, zmin). */
    const VkViewport *vp = &dyn->vp.viewports[d->vp_pass];
-   sv->viewport[0].scale = 0.5f * vp->width;
+      sv->viewport[0].scale = 0.5f * vp->width;
    sv->viewport[1].scale = 0.5f * vp->height;
-   sv->viewport[2].scale = vp->maxDepth - vp->minDepth;
    sv->viewport[0].offset = 0.5f * vp->width + vp->x;
    sv->viewport[1].offset = 0.5f * vp->height + vp->y;
-   sv->viewport[2].offset = vp->minDepth;
+   if (dyn->vp.depth_clip_negative_one_to_one) {
+      sv->viewport[2].scale = 0.5f * (vp->maxDepth - vp->minDepth);
+      sv->viewport[2].offset = 0.5f * (vp->maxDepth + vp->minDepth);
+   } else {
+      sv->viewport[2].scale = vp->maxDepth - vp->minDepth;
+      sv->viewport[2].offset = vp->minDepth;
+   }
+
 
    sv->vs.first_vertex = d->first_vertex;
    sv->vs.base_instance = d->base_instance;
@@ -1224,6 +1230,7 @@ mali_gfx_dyn_bake_dirty(const struct vk_dynamic_graphics_state *dyn)
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_VP_VIEWPORTS);
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_VP_SCISSOR_COUNT);
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_VP_SCISSORS);
+   BITSET_CLEAR(d, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE);
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS);
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_VI);
    BITSET_CLEAR(d, MESA_VK_DYNAMIC_VI_BINDINGS_VALID);
@@ -1257,7 +1264,9 @@ mali_gfx_collect_dynamic_dirty(struct mali_cmd_buffer *cmd)
    struct mali_gfx_draw_state *d = &cmd->gfx.draw;
 
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS) ||
-       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_SCISSORS)) {
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_SCISSORS))) ||
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))) {
+
       d->dirty |= MALI_GFX_DIRTY_VIEWPORT | MALI_GFX_DIRTY_VS_FAU;
    }
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS))
