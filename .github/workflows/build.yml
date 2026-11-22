@@ -62,11 +62,11 @@ jobs:
 
       - name: Configure and compile with Meson & Ninja
         run: |
-               if [ ! -d "mesa/.git" ]; then
+         if [ ! -d "mesa/.git" ]; then
          git init mesa
          git -C mesa fetch --depth 1 https://github.com/bmdhacks/armsx2-turnip.git b5f8787e44083b4840f605b595e79fcf61077175
          git -C mesa checkout FETCH_HEAD
-       fi
+          fi
 
           cat <<EOF > /tmp/ndk-override.ini
           [constants]
