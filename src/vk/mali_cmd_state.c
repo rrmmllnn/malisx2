@@ -110,6 +110,13 @@ MALI_PER_ARCH(cmd_bind_graphics)(struct mali_cmd_buffer *cmd, struct mali_graphi
                                                      : dyn->vi_binding_strides;
       if (m & ~(MALI_GFX_STATIC_VI | MALI_GFX_STATIC_STRIDES))
          bind_static_state(dyn, p, m);
+           if (BITSET_TEST(p->state.set, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE) &&
+          dyn->vp.depth_clip_negative_one_to_one != p->state.vp.depth_clip_negative_one_to_one) {
+         dyn->vp.depth_clip_negative_one_to_one = p->state.vp.depth_clip_negative_one_to_one;
+         BITSET_SET(dyn->dirty, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE);
+         BITSET_SET(dyn->set, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE);
+      }
+
    }
 
    if (d->pipeline == p)
