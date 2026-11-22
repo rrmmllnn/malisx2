@@ -643,6 +643,7 @@ baked_words_use_dynamic_state(const BITSET_WORD *dynamic)
       MESA_VK_DYNAMIC_VP_VIEWPORTS,
       MESA_VK_DYNAMIC_VP_SCISSOR_COUNT,
       MESA_VK_DYNAMIC_VP_SCISSORS,
+      MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE,
       MESA_VK_DYNAMIC_RS_LINE_WIDTH,
       MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS,
       /* The runtime marks advanced blending dynamic when the feature is
