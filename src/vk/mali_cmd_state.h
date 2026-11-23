@@ -1264,8 +1264,8 @@ mali_gfx_collect_dynamic_dirty(struct mali_cmd_buffer *cmd)
    struct mali_gfx_draw_state *d = &cmd->gfx.draw;
 
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS) ||
-       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_SCISSORS))) ||
-       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))) {
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_SCISSORS)) ||
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE)) {
 
       d->dirty |= MALI_GFX_DIRTY_VIEWPORT | MALI_GFX_DIRTY_VS_FAU;
    }
