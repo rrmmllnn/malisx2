@@ -84,8 +84,8 @@ jobs:
       - name: Locate built driver library
         run: |
           mkdir -p artifacts
-          find build-android -name "libvulkan_mali.so" -exec cp -v {} artifacts/ \;
-          ls -lh artifacts/
+          find . -maxdepth 4 -name "*.so*" -not -path "./.git/*"
+
 
       - name: Upload libvulkan_mali.so artifact
         uses: actions/upload-artifact@v4
